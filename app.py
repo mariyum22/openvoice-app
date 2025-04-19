@@ -13,7 +13,6 @@ st.markdown("Upload your voice and let the model convert it to another speaker's
 
 # Load the model once
 @st.cache_resource
-@st.cache_resource
 def load_model():
     model = BaseSpeakerTTS(
         config_path="checkpoints/base_speakers/EN/config.json",
@@ -21,8 +20,6 @@ def load_model():
     )
     return model
         #vocoder_path="checkpoints/vocoders/hifigan"     # ✅ This must match your GitHub folder
-    )
-    return model
 
 model = load_model()
 
