@@ -1,58 +1,58 @@
 import streamlit as st
-import os
 import torch
-import soundfile as sf
-from openvoice.api import BaseSpeakerTTS
+import os
+from OpenVoice.api import BaseSpeakerTTS, ToneColorConverter
+from OpenVoice import se_extractor
 
-# Set Streamlit page config
-st.set_page_config(page_title="OpenVoice: Voice-to-Voice", layout="centered")
+# Set page config
+st.set_page_config(page_title="OpenVoice Voice-to-Voice", layout="centered")
+st.title("🔁 OpenVoice - Voice to Voice Conversion")
+st.markdown("Upload your voice and convert it to another speaker’s tone!")
 
-# Display the header
-st.title("🎤 OpenVoice - Voice-to-Voice Conversion")
-st.markdown("Upload your voice and let the model convert it to another speaker's tone!")
+# Use CPU since Streamlit Cloud has no GPU
+device = "cpu"
 
-# Load the model once
+# Load models
 @st.cache_resource
-def load_model():
-    model = BaseSpeakerTTS(
-        config_path = "checkpoints/base_speakers/EN/config.json",
-        device = "cpu",
-        language = "en",
-        model_path = "checkpoints/base_speakers/EN",
-        vocoder_path = "checkpoints/converter"
-    )
-    return model
+def load_models():
+    # Base speaker model
+    tts = BaseSpeakerTTS("checkpoints/base_speakers/EN/config.json", device=device)
+    tts.load_ckpt("checkpoints/base_speakers/EN/checkpoint.pth")
+    
+    # Converter model
+    converter = ToneColorConverter("checkpoints/converter/config.json", device=device)
+    converter.load_ckpt("checkpoints/converter/checkpoint.pth")
 
-model = load_model()
+    # Speaker embeddings
+    default_se = torch.load("checkpoints/base_speakers/EN/en_default_se.pth").to(device)
+    style_se = torch.load("checkpoints/base_speakers/EN/en_style_se.pth").to(device)
 
+    return tts, converter, default_se, style_se
 
+tts_model, converter, default_se, style_se = load_models()
 
+# Upload input voice
+uploaded_audio = st.file_uploader("Upload your voice (WAV format)", type=["wav"])
+text_input = st.text_input("Text to convert (for base synthesis)", "Hello, how are you?")
+style = st.selectbox("Select voice style", options=["default", "style"])
 
-
-
-# Upload voice
-uploaded_file = st.file_uploader("Upload a voice clip (.wav)", type=["wav"])
-
-if uploaded_file:
+if uploaded_audio and st.button("🌀 Convert Voice"):
     input_path = "input.wav"
     with open(input_path, "wb") as f:
-        f.write(uploaded_file.read())
-    st.audio(input_path, format="audio/wav", start_time=0)
-    st.success("✅ Voice uploaded!")
+        f.write(uploaded_audio.read())
 
-    # Conversion trigger
-    if st.button("🔁 Convert Voice"):
-        output_path = "output.wav"
+    temp_output = "base.wav"
+    final_output = "converted.wav"
 
-        try:
-            model.infer(
-                speaker_wav=input_path,
-                src_wav=input_path,
-                output_path=output_path,
-                language="en"
-            )
-            st.success("✅ Conversion complete!")
-            st.audio(output_path, format="audio/wav", start_time=0)
+    # Step 1: Generate base speech
+    tts_model.tts(text_input, temp_output, speaker=style, language="English")
 
-        except Exception as e:
-            st.error(f"🚫 Conversion failed: {e}")
+    # Step 2: Extract target voice embedding
+    target_se, _ = se_extractor.get_se(input_path, converter, vad=True)
+
+    # Step 3: Convert base voice to match target speaker tone
+    source_se = default_se if style == "default" else style_se
+    converter.convert(temp_output, src_se=source_se, tgt_se=target_se, output_path=final_output)
+
+    st.audio(final_output, format="audio/wav")
+    st.success("✅ Conversion complete!")
