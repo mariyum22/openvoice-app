@@ -1,38 +1,54 @@
 import streamlit as st
 import os
+import torch
 import soundfile as sf
 from openvoice.api import BaseSpeakerTTS
 
-# Initialize model once
+# Set Streamlit page config
+st.set_page_config(page_title="OpenVoice: Voice-to-Voice", layout="centered")
+
+# Display the header
+st.title("🎤 OpenVoice - Voice-to-Voice Conversion")
+st.markdown("Upload your voice and let the model convert it to another speaker's tone!")
+
+# Load the model once
 @st.cache_resource
 def load_model():
     model = BaseSpeakerTTS()
     model.load_model(
         language="en",
-        model_path="checkpoints/base_speakers/EN",  # adjust this path to your repo
+        model_path="checkpoints/base_speakers/EN",      # Make sure these paths exist
         vocoder_path="checkpoints/vocoders/hifigan"
     )
     return model
 
 model = load_model()
 
-st.title("🎤 OpenVoice: Voice-to-Voice Conversion")
-
-uploaded_file = st.file_uploader("Upload a voice file (.wav)", type=["wav"])
+# Upload voice
+uploaded_file = st.file_uploader("Upload a voice clip (.wav)", type=["wav"])
 
 if uploaded_file:
-    with open("input.wav", "wb") as f:
+    input_path = "input.wav"
+    with open(input_path, "wb") as f:
         f.write(uploaded_file.read())
-    st.audio("input.wav")
+    st.audio(input_path, format="audio/wav", start_time=0)
 
-    if st.button("Convert Voice"):
+    st.success("Voice uploaded!")
+
+    # Conversion trigger
+    if st.button("🔁 Convert Voice"):
         output_path = "output.wav"
-        model.infer(
-            speaker_wav="input.wav",
-            src_wav="input.wav",  # you can split source/target later
-            output_path=output_path,
-            language="en"
-        )
 
-        st.success("Conversion done!")
-        st.audio(output_path)
+        try:
+            model.infer(
+                speaker_wav=input_path,
+                src_wav=input_path,
+                output_path=output_path,
+                language="en"
+            )
+
+            st.success("✅ Conversion complete!")
+            st.audio(output_path, format="audio/wav", start_time=0)
+
+        except Exception as e:
+            st.error(f"🚫 Conversion failed: {e}")
