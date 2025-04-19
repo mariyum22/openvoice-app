@@ -6,6 +6,10 @@
   "audio_encoder": "wavlm",
   "vocoder": "hifigan",
   "use_pitch": true,
-  "use_energy": true
+  "use_energy": true,
+  "data": {
+    "symbols": ["_", ",", ".", "!", "?", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "'"],
+    "filter_length": 1024,
+    "hop_length": 256
+  }
 }
-
