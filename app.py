@@ -3,8 +3,9 @@ import torch
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-from OpenVoice.api import BaseSpeakerTTS, ToneColorConverter
-from OpenVoice import se_extractor
+from openvoice.api import BaseSpeakerTTS, ToneColorConverter
+from openvoice import se_extractor
+
 
 # Set page config
 st.set_page_config(page_title="OpenVoice Voice-to-Voice", layout="centered")
