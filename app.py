@@ -15,14 +15,14 @@ st.markdown("Upload your voice and let the model convert it to another speaker's
 @st.cache_resource
 def load_model():
     model = BaseSpeakerTTS(
-    config_path="checkpoints/base_speakers/EN/config.json",
-    device="cpu",
-    vocoder_path="checkpoints/converter"
-)
+        config_path="checkpoints/base_speakers/EN/config.json",
+        device="cpu",
+        vocoder_path="checkpoints/converter/config.json"
+    )
     return model
-        
 
 model = load_model()
+
 
 # Upload voice
 uploaded_file = st.file_uploader("Upload a voice clip (.wav)", type=["wav"])
