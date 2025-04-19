@@ -1,1 +1,11 @@
+{
+  "model": "base_speakers",
+  "sampling_rate": 16000,
+  "language": "en",
+  "speaker_embedding_dim": 256,
+  "audio_encoder": "wavlm",
+  "vocoder": "hifigan",
+  "use_pitch": true,
+  "use_energy": true
+}
 
