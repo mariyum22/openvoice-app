@@ -17,8 +17,8 @@ def load_model():
     model = BaseSpeakerTTS()
     model.load_model(
         language="en",
-        model_path="checkpoints/base_speakers/EN",      # Make sure these paths exist
-        vocoder_path="checkpoints/vocoders/hifigan"
+        model_path="checkpoints/base_speakers/EN",      # ✅ This must match your GitHub folder
+        vocoder_path="checkpoints/vocoders/hifigan"     # ✅ This must match your GitHub folder
     )
     return model
 
@@ -32,8 +32,7 @@ if uploaded_file:
     with open(input_path, "wb") as f:
         f.write(uploaded_file.read())
     st.audio(input_path, format="audio/wav", start_time=0)
-
-    st.success("Voice uploaded!")
+    st.success("✅ Voice uploaded!")
 
     # Conversion trigger
     if st.button("🔁 Convert Voice"):
@@ -46,7 +45,6 @@ if uploaded_file:
                 output_path=output_path,
                 language="en"
             )
-
             st.success("✅ Conversion complete!")
             st.audio(output_path, format="audio/wav", start_time=0)
 
