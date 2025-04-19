@@ -13,20 +13,18 @@ st.markdown("Upload your voice and let the model convert it to another speaker's
 
 # Load the model once
 @st.cache_resource
-@st.cache_resource
 def load_model():
     model = BaseSpeakerTTS(
         config_path="checkpoints/base_speakers/EN/config.json",
-        device="cpu"
-    )
-    model.load_model(
+        model_path="checkpoints/base_speakers/EN",
+        vocoder_path ="checkpoints/converter",
         language ="en",
-        model_path ="checkpoints/base_speakers/EN",
-        vocoder_path ="checkpoints/converter"
+        device ="cpu"
     )
     return model
 
 model = load_model()
+
 
 
 
