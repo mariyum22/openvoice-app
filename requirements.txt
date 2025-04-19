@@ -1,6 +1,7 @@
 streamlit
-torch==2.0.1
-torchaudio
+torch==2.2.0
+torchaudio==2.2.0
+
 soundfile
 gradio==3.48.0
 pydub
