@@ -16,7 +16,7 @@ st.markdown("Upload your voice and let the model convert it to another speaker's
 def load_model():
     model = BaseSpeakerTTS(
         config_path="checkpoints/base_speakers/EN/config.json",
-        device="cpu"
+    device="cpu",
         vocoder_path="checkpoints/converter"     # ✅ This must match your GitHub folder
     )
     return model
