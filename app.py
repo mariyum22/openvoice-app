@@ -1,7 +1,7 @@
 import streamlit as st
 import torch
-from OpenVoice import se_extractor
-from OpenVoice.api import BaseSpeakerTTS, ToneColorConverter
+from openvoice import se_extractor
+from openvoice.api import BaseSpeakerTTS, ToneColorConverter
 
 # Cache model loading so that it runs only once
 @st.cache_resource
