@@ -18,7 +18,7 @@ def load_model():
     model.load_model(
         language="en",
         model_path="checkpoints/base_speakers/EN",      # ✅ This must match your GitHub folder
-        vocoder_path="checkpoints/vocoders/hifigan"     # ✅ This must match your GitHub folder
+        #vocoder_path="checkpoints/vocoders/hifigan"     # ✅ This must match your GitHub folder
     )
     return model
 
