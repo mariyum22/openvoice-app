@@ -8,10 +8,17 @@
   "use_pitch": true,
   "use_energy": true,
   "data": {
-    "symbols": ["_", ",", ".", "!", "?", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "'"],
+    "text_cleaners": ["english_cleaners"],
+    "add_blank": true,
+    "n_speakers": 10,
+    "symbols": [
+      "_", ",", ".", "!", "?", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n",
+      "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "'"
+    ],
     "filter_length": 1024,
     "hop_length": 256,
-    "n_speakers": 10
+    "win_length": 1024
   }
 }
+
 
