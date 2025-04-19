@@ -10,6 +10,8 @@
   "data": {
     "symbols": ["_", ",", ".", "!", "?", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "'"],
     "filter_length": 1024,
-    "hop_length": 256
+    "hop_length": 256,
+    "n_speakers": 10
   }
 }
+
