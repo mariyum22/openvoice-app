@@ -17,9 +17,10 @@ def load_model():
     model = BaseSpeakerTTS(
         config_path="checkpoints/base_speakers/EN/config.json",
         device="cpu"
+        vocoder_path="checkpoints/converter"     # ✅ This must match your GitHub folder
     )
     return model
-        #vocoder_path="checkpoints/vocoders/hifigan"     # ✅ This must match your GitHub folder
+        
 
 model = load_model()
 
