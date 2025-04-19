@@ -23,7 +23,7 @@ def load_models():
     tts.load_ckpt("checkpoints/base_speakers/EN/checkpoint.pth")
     
     # Converter model
-    converter = ToneColorConverter("checkpoints/converter/config.json", device=device)
+    converter = ToneColorConverter("checkpoints/converter/config.json", device=device, enable_watermark=False)
     converter.load_ckpt("checkpoints/converter/checkpoint.pth")
 
     # Speaker embeddings
