@@ -117,14 +117,22 @@ class BaseSpeakerTTS(OpenVoiceBaseClass):
 
 
 class ToneColorConverter(OpenVoiceBaseClass):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, enable_watermark=True, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if kwargs.get('enable_watermark', True):
-            import wavmark
-            self.watermark_model = wavmark.load_model().to(self.device)
+        # ✅ Check both kwarg and explicit arg
+        enable_watermark = enable_watermark and kwargs.get('enable_watermark', True)
+
+        if enable_watermark:
+            try:
+                import wavmark
+                self.watermark_model = wavmark.load_model().to(self.device)
+            except ImportError:
+                print("🔒 wavmark not found, disabling watermark support")
+                self.watermark_model = None
         else:
             self.watermark_model = None
+
         self.version = getattr(self.hps, '_version_', "v1")
 
     def extract_se(self, ref_wav_list, se_save_path=None):
