@@ -9,6 +9,9 @@ import uuid
 HF_BASE = "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main"
 EN_DIR = f"{HF_BASE}/base_speakers/EN"
 CONVERTER_DIR = f"{HF_BASE}/converter"
+CONVERTER_CONFIG_URL = f"{CONVERTER_DIR}/config.json"
+CONVERTER_CKPT_URL = f"{CONVERTER_DIR}/checkpoint.pth"
+
 
 @st.cache_resource
 def load_models():
