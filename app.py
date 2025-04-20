@@ -1,96 +1,58 @@
-import os
-import sys
-import shutil
-import torch
 import streamlit as st
-
-# Ensure the local 'openvoice' module is importable (assuming 'openvoice' folder in the same directory)
-sys.path.append(os.path.abspath("."))
-
-# Import OpenVoice components (BaseSpeakerTTS, ToneColorConverter, and speaker embedding extractor)
-from openvoice import se_extractor
+import torch
+import soundfile as sf
 from openvoice.api import BaseSpeakerTTS, ToneColorConverter
+import os
+import uuid
 
-# Set device to CPU explicitly
-device = "cpu"
+# Hugging Face base path
+HF_BASE = "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main"
+EN_DIR = f"{HF_BASE}/base_speakers/EN"
+CONVERTER_DIR = f"{HF_BASE}/converter"
 
-# Paths to checkpoints (relative to this app.py file)
-EN_BASE_DIR = "checkpoints/base_speakers/EN"
-CONVERTER_DIR = "checkpoints/converter"
-
-# Load models and embeddings with caching to avoid reloading on each run
 @st.cache_resource
 def load_models():
-    # Initialize BaseSpeakerTTS and ToneColorConverter models on CPU&#8203;:contentReference[oaicite:3]{index=3}
-    tts_model = BaseSpeakerTTS(f"{EN_BASE_DIR}/config.json", device=device)
-    tts_model.load_ckpt(f"{EN_BASE_DIR}/checkpoint.pth")
-    # Disable watermarking by setting enable_watermark=False&#8203;:contentReference[oaicite:4]{index=4}
-    converter_model = ToneColorConverter(f"{CONVERTER_DIR}/config.json", device=device)
-    converter_model.enable_watermark = False
-    converter_model.load_ckpt(f"{CONVERTER_DIR}/checkpoint.pth")
-    # Load English style embeddings (default and style)&#8203;:contentReference[oaicite:5]{index=5}
-    emb_default = torch.load(f"{EN_BASE_DIR}/en_default_se.pth", map_location=device)
-    emb_style   = torch.load(f"{EN_BASE_DIR}/en_style_se.pth", map_location=device)
-    return tts_model, converter_model, emb_default, emb_style
+    with st.spinner("Loading models..."):
+        # Load BaseSpeakerTTS
+        tts_model = BaseSpeakerTTS(f"{EN_DIR}/config.json", device="cpu")
+        tts_model.load_ckpt(f"{EN_DIR}/checkpoint.pth")
 
-# Load models and embeddings (cached after first run)
-tts_model, converter_model, emb_default, emb_style = load_models()
+        # Load ToneColorConverter (with watermark disabled)
+        converter = ToneColorConverter(f"{CONVERTER_DIR}/config.json", device="cpu", enable_watermark=False)
+        converter.load_ckpt(f"{CONVERTER_DIR}/checkpoint.pth")
 
-# Streamlit App UI
-st.title("OpenVoice v1 Voice Conversion (CPU Demo)")
-st.write("Convert text to speech in the voice of an uploaded reference speaker using OpenVoice v1.")
+        # Load speaker embeddings
+        default_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_default_se.pth", map_location="cpu")
+        style_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_style_se.pth", map_location="cpu")
 
-# File uploader for reference voice audio
-uploaded_file = st.file_uploader("Upload a reference speaker WAV audio file", type=["wav"])
+        return tts_model, converter, default_se, style_se
 
-# Text input for the content to be spoken
-text_input = st.text_input("Text to synthesize (in English)")
+# Load once and cache
+tts_model, converter, default_se, style_se = load_models()
 
-# Style selection for the base voice generation
-style_option = st.selectbox("Voice style for base speech", ["default", "style"])
+# Streamlit UI
+st.title("OpenVoice v1 - Voice-to-Voice Demo (CPU)")
 
-# Button to trigger synthesis and conversion
-if st.button("Synthesize & Convert"):
-    if uploaded_file is None or text_input.strip() == "":
-        st.warning("Please upload a WAV file and enter some text before clicking 'Synthesize & Convert'.")
-    else:
-        # Save the uploaded reference audio to a temporary file
-        os.makedirs("uploads", exist_ok=True)
-        ref_wav_path = os.path.join("uploads", "reference.wav")
-        with open(ref_wav_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
+input_audio = st.file_uploader("Upload your voice (WAV only)", type=["wav"])
+style_option = st.selectbox("Choose voice style", ["default", "style"])
+run_btn = st.button("Convert")
 
-        # Determine source style embedding based on selected style
-        source_se = emb_default if style_option == "default" else emb_style
+if run_btn and input_audio is not None:
+    st.audio(input_audio, format="audio/wav")
+    with st.spinner("Converting..."):
 
-        # Run the voice conversion pipeline with a spinner for feedback
-        with st.spinner("Synthesizing speech and converting voice..."):
-            try:
-                # 1. Extract target speaker embedding from the reference audio
-                target_se, wavs_folder = se_extractor.get_se(
-                    ref_wav_path, converter_model, target_dir="processed", max_length=60.0, vad=True
-                )
-                # Clean up intermediate files from voice activity detection (if any)
-                if wavs_folder and os.path.isdir(wavs_folder):
-                    shutil.rmtree(wavs_folder, ignore_errors=True)
+        temp_input_path = f"input_{uuid.uuid4().hex}.wav"
+        temp_output_path = f"output_{uuid.uuid4().hex}.wav"
+        with open(temp_input_path, "wb") as f:
+            f.write(input_audio.read())
 
-                # 2. Generate base speech audio using the base speaker TTS model
-                os.makedirs("outputs", exist_ok=True)
-                base_audio_path = os.path.join("outputs", "tmp.wav")
-                tts_model.tts(text_input, base_audio_path, speaker=style_option, language="English")
+        source_se = default_se if style_option == "default" else style_se
+        audio = converter.convert(temp_input_path, src_se=source_se, tgt_se=source_se)
 
-                # 3. Convert the base audio's tone color to the target speaker's voice
-                final_audio_path = os.path.join("outputs", "output.wav")
-                converter_model.convert(
-                    audio_src_path=base_audio_path,
-                    src_se=source_se,
-                    tgt_se=target_se,
-                    output_path=final_audio_path
-                )
-            except Exception as e:
-                st.error(f"An error occurred during voice conversion: {e}")
-            else:
-                # On success, play the converted audio
-                st.success("Voice conversion completed!")
-                audio_bytes = open(final_audio_path, "rb").read()
-                st.audio(audio_bytes, format="audio/wav")
+        sf.write(temp_output_path, audio, samplerate=44100)
+        st.success("Voice conversion complete!")
+        st.audio(temp_output_path, format="audio/wav")
+
+        # Cleanup
+        os.remove(temp_input_path)
+        os.remove(temp_output_path)
