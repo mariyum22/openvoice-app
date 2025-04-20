@@ -27,38 +27,46 @@ def load_models():
         converter.load_ckpt(CONVERTER_CKPT_URL)
 
 
-        # Load speaker embeddings
+       # Load speaker embeddings
         default_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_default_se.pth", map_location="cpu")
         style_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_style_se.pth", map_location="cpu")
+        imran_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/imran_khan_se.pth", map_location="cpu")
 
-        return tts_model, converter, default_se, style_se
+    return tts_model, converter, default_se, style_se, imran_se
 
 # Load once and cache
-tts_model, converter, default_se, style_se = load_models()
+tts_model, converter, default_se, style_se, imran_se = load_models()
 
 # Streamlit UI
 st.title("OpenVoice v1 - Voice-to-Voice Demo (CPU)")
 
-input_audio = st.file_uploader("Upload your voice (WAV only)", type=["wav"])
-style_option = st.selectbox("Choose voice style", ["default", "style"])
-run_btn = st.button("Convert")
+uploaded_file = st.file_uploader("Upload your voice (WAV only)", type=[".wav"])
 
-if run_btn and input_audio is not None:
-    st.audio(input_audio, format="audio/wav")
-    with st.spinner("Converting..."):
+style_option = st.selectbox("Choose voice style", ["default", "style", "imran_khan"])
 
+if st.button("Convert") and uploaded_file:
+    with st.spinner("Processing..."):
         temp_input_path = f"input_{uuid.uuid4().hex}.wav"
         temp_output_path = f"output_{uuid.uuid4().hex}.wav"
+
         with open(temp_input_path, "wb") as f:
-            f.write(input_audio.read())
+            f.write(uploaded_file.read())
 
+        # Pick source and target SE
         source_se = default_se if style_option == "default" else style_se
-        audio = converter.convert(temp_input_path, src_se=source_se, tgt_se=source_se)
+        target_se = (
+            default_se if style_option == "default" else
+            style_se if style_option == "style" else
+            imran_se
+        )
 
-        sf.write(temp_output_path, audio, samplerate=44100)
-        st.success("Voice conversion complete!")
+        audio = converter.convert(temp_input_path, src_se=source_se, tgt_se=target_se)
+
+        sf.write(temp_output_path, audio, samplerate=24000)
+
         st.audio(temp_output_path, format="audio/wav")
 
         # Cleanup
         os.remove(temp_input_path)
         os.remove(temp_output_path)
+
