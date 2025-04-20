@@ -35,8 +35,9 @@ class OpenVoiceBaseClass(object):
             len(getattr(hps, 'symbols', [])),
             hps.data.filter_length // 2 + 1,
             n_speakers=hps.data.n_speakers,
-            **hps.model,
+            **vars(hps.model),  # ✅ this converts the namespace to a dict
         ).to(device)
+
 
         model.eval()
         self.model = model
