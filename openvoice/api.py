@@ -6,6 +6,8 @@ from openvoice import utils
 from openvoice import commons
 import os
 import librosa
+import json
+import requests  # <-- ADDED to handle URL-based config
 from openvoice.text import text_to_sequence
 from openvoice.mel_processing import spectrogram_torch
 from openvoice.models import SynthesizerTrn
@@ -18,7 +20,16 @@ class OpenVoiceBaseClass(object):
         if 'cuda' in device:
             assert torch.cuda.is_available()
 
-        hps = utils.get_hparams_from_file(config_path)
+        # 🔽 Load config from URL or local path
+        if config_path.startswith("http"):
+            response = requests.get(config_path)
+            response.raise_for_status()
+            config = json.loads(response.text)
+        else:
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = json.load(f)
+
+        hps = utils.dict_to_namespace(config)
 
         model = SynthesizerTrn(
             len(getattr(hps, 'symbols', [])),
@@ -138,7 +149,6 @@ class ToneColorConverter(OpenVoiceBaseClass):
 
     def convert(self, audio_src_path, src_se, tgt_se, output_path=None, tau=0.3, message="default"):
         hps = self.hps
-        # load audio
         audio, sample_rate = librosa.load(audio_src_path, sr=hps.data.sampling_rate)
         audio = torch.tensor(audio).float()
         
@@ -156,7 +166,7 @@ class ToneColorConverter(OpenVoiceBaseClass):
                 return audio
             else:
                 soundfile.write(output_path, audio, hps.data.sampling_rate)
-    
+
     def add_watermark(self, audio, message):
         if self.watermark_model is None:
             return audio
@@ -197,4 +207,3 @@ class ToneColorConverter(OpenVoiceBaseClass):
         bits = np.stack(bits).reshape(-1, 8)
         message = utils.bits_to_string(bits)
         return message
-
