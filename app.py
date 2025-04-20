@@ -31,9 +31,11 @@ def load_models():
         default_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_default_se.pth", map_location="cpu")
         style_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_style_se.pth", map_location="cpu")
         # 🔧 Fix for Imran Khan embedding
-        imran_se = torch.load("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth",
+        imran_se = torch.hub.load_state_dict_from_url(
+        "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth",
         map_location="cpu"
         )
+
 
 
     return tts_model, converter, default_se, style_se, imran_se
