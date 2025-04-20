@@ -17,9 +17,12 @@ def load_models():
         tts_model = BaseSpeakerTTS(f"{EN_DIR}/config.json", device="cpu")
         tts_model.load_ckpt(f"{EN_DIR}/checkpoint.pth")
 
-        # Load ToneColorConverter (with watermark disabled)
-        converter = ToneColorConverter(f"{CONVERTER_DIR}/config.json", device="cpu", enable_watermark=False)
-        converter.load_ckpt(f"{CONVERTER_DIR}/checkpoint.pth")
+        
+        # Load the ToneColorConverter
+        converter = ToneColorConverter(CONVERTER_CONFIG_URL, device="cpu")
+        setattr(converter, 'enable_watermark', False)  # 💡 override after init without passing to __init__
+        converter.load_ckpt(CONVERTER_CKPT_URL)
+
 
         # Load speaker embeddings
         default_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_default_se.pth", map_location="cpu")
