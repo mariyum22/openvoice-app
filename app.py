@@ -25,7 +25,8 @@ def load_models():
     tts_model = BaseSpeakerTTS(f"{EN_BASE_DIR}/config.json", device=device)
     tts_model.load_ckpt(f"{EN_BASE_DIR}/checkpoint.pth")
     # Disable watermarking by setting enable_watermark=False&#8203;:contentReference[oaicite:4]{index=4}
-    converter_model = ToneColorConverter(f"{CONVERTER_DIR}/config.json", device=device, enable_watermark=False)
+    converter_model = ToneColorConverter(f"{CONVERTER_DIR}/config.json", device=device)
+    converter_model.enable_watermark = False
     converter_model.load_ckpt(f"{CONVERTER_DIR}/checkpoint.pth")
     # Load English style embeddings (default and style)&#8203;:contentReference[oaicite:5]{index=5}
     emb_default = torch.load(f"{EN_BASE_DIR}/en_default_se.pth", map_location=device)
