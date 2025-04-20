@@ -2,6 +2,18 @@ import re
 import json
 import numpy as np
 
+def dict_to_namespace(d):
+    """Recursively converts a dictionary to an object with attribute access."""
+    from types import SimpleNamespace
+    def convert(obj):
+        if isinstance(obj, dict):
+            return SimpleNamespace(**{k: convert(v) for k, v in obj.items()})
+        elif isinstance(obj, list):
+            return [convert(i) for i in obj]
+        return obj
+    return convert(d)
+
+
 
 def get_hparams_from_file(config_path):
     with open(config_path, "r", encoding="utf-8") as f:
