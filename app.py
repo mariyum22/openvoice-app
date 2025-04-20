@@ -30,7 +30,12 @@ def load_models():
        # Load speaker embeddings
         default_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_default_se.pth", map_location="cpu")
         style_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_style_se.pth", map_location="cpu")
-        imran_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/imran_khan_se.pth", map_location="cpu")
+        # 🔧 Fix for Imran Khan embedding
+        imran_se_dict = torch.hub.load_state_dict_from_url(
+            "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth",
+        map_location="cpu"
+        )
+        imran_se = imran_se_dict["vector"]
 
     return tts_model, converter, default_se, style_se, imran_se
 
@@ -60,7 +65,8 @@ if st.button("Convert") and uploaded_file:
             imran_se
         )
 
-        audio = converter.convert(temp_input_path, src_se=source_se, tgt_se=target_se)
+        audio = converter.convert(temp_input_path, src_se=source_se, tgt_se=imran_se)
+
 
         sf.write(temp_output_path, audio, samplerate=24000)
 
