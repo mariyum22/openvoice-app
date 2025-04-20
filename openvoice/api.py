@@ -1,202 +1,71 @@
+import streamlit as st
 import torch
-import numpy as np
-import re
-import soundfile
-from openvoice import utils
-from openvoice import commons
+import soundfile as sf
+from openvoice.api import BaseSpeakerTTS, ToneColorConverter
 import os
-import librosa
-from openvoice.text import text_to_sequence
-from openvoice.mel_processing import spectrogram_torch
-from openvoice.models import SynthesizerTrn
 
+# Hugging Face base path
+HF_BASE = "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main"
 
-class OpenVoiceBaseClass(object):
-    def __init__(self, 
-                config_path, 
-                device='cuda:0'):
-        if 'cuda' in device:
-            assert torch.cuda.is_available()
+# Streamlit App Title
+st.title("OpenVoice v1 - Voice Conversion App (CPU Demo)")
 
-        hps = utils.get_hparams_from_file(config_path)
+# Model Directories (Hugging Face paths)
+EN_DIR = f"{HF_BASE}/base_speakers/EN"
+CONVERTER_DIR = f"{HF_BASE}/converter"
 
-        model = SynthesizerTrn(
-            len(getattr(hps, 'symbols', [])),
-            hps.data.filter_length // 2 + 1,
-            n_speakers=hps.data.n_speakers,
-            **hps.model,
-        ).to(device)
+def load_models():
+    with st.spinner("Loading models..."):
+        # Load BaseSpeakerTTS
+        tts_model = BaseSpeakerTTS(f"{EN_DIR}/config.json", device="cpu")
+        tts_model.load_ckpt(f"{EN_DIR}/checkpoint.pth")
 
-        model.eval()
-        self.model = model
-        self.hps = hps
-        self.device = device
+        # Load ToneColorConverter with watermark disabled
+        converter = ToneColorConverter(f"{CONVERTER_DIR}/config.json", device="cpu")
+        converter.enable_watermark = False
+        converter.load_ckpt(f"{CONVERTER_DIR}/checkpoint.pth")
 
-    def load_ckpt(self, ckpt_path):
-        checkpoint_dict = torch.load(ckpt_path, map_location=torch.device(self.device))
-        a, b = self.model.load_state_dict(checkpoint_dict['model'], strict=False)
-        print("Loaded checkpoint '{}'".format(ckpt_path))
-        print('missing/unexpected keys:', a, b)
+        # Load embeddings
+        default_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_default_se.pth", map_location="cpu")
+        style_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_style_se.pth", map_location="cpu")
 
+        return tts_model, converter, default_se, style_se
 
-class BaseSpeakerTTS(OpenVoiceBaseClass):
-    language_marks = {
-        "english": "EN",
-        "chinese": "ZH",
-    }
+# Cache models after first run
+@st.cache_resource
+def get_models():
+    return load_models()
 
-    @staticmethod
-    def get_text(text, hps, is_symbol):
-        text_norm = text_to_sequence(text, hps.symbols, [] if is_symbol else hps.data.text_cleaners)
-        if hps.data.add_blank:
-            text_norm = commons.intersperse(text_norm, 0)
-        text_norm = torch.LongTensor(text_norm)
-        return text_norm
+tts_model, converter, default_se, style_se = get_models()
 
-    @staticmethod
-    def audio_numpy_concat(segment_data_list, sr, speed=1.):
-        audio_segments = []
-        for segment_data in segment_data_list:
-            audio_segments += segment_data.reshape(-1).tolist()
-            audio_segments += [0] * int((sr * 0.05)/speed)
-        audio_segments = np.array(audio_segments).astype(np.float32)
-        return audio_segments
+# Upload interface
+uploaded_audio = st.file_uploader("Upload your voice clip (.wav only, less than 30 seconds)", type=[".wav"])
 
-    @staticmethod
-    def split_sentences_into_pieces(text, language_str):
-        texts = utils.split_sentence(text, language_str=language_str)
-        print(" > Text splitted to sentences.")
-        print('\n'.join(texts))
-        print(" > ===========================")
-        return texts
+# Voice style selection
+style_option = st.selectbox("Choose style embedding:", ["default", "style"])
+tgt_embedding = default_se if style_option == "default" else style_se
 
-    def tts(self, text, output_path, speaker, language='English', speed=1.0):
-        mark = self.language_marks.get(language.lower(), None)
-        assert mark is not None, f"language {language} is not supported"
+# Conversion trigger
+if uploaded_audio and st.button("Convert Voice"):
+    with st.spinner("Converting..."):
+        input_path = "input.wav"
+        output_path = "output.wav"
 
-        texts = self.split_sentences_into_pieces(text, mark)
+        with open(input_path, "wb") as f:
+            f.write(uploaded_audio.read())
 
-        audio_list = []
-        for t in texts:
-            t = re.sub(r'([a-z])([A-Z])', r'\1 \2', t)
-            t = f'[{mark}]{t}[{mark}]'
-            stn_tst = self.get_text(t, self.hps, False)
-            device = self.device
-            speaker_id = self.hps.speakers[speaker]
-            with torch.no_grad():
-                x_tst = stn_tst.unsqueeze(0).to(device)
-                x_tst_lengths = torch.LongTensor([stn_tst.size(0)]).to(device)
-                sid = torch.LongTensor([speaker_id]).to(device)
-                audio = self.model.infer(x_tst, x_tst_lengths, sid=sid, noise_scale=0.667, noise_scale_w=0.6,
-                                    length_scale=1.0 / speed)[0][0, 0].data.cpu().float().numpy()
-            audio_list.append(audio)
-        audio = self.audio_numpy_concat(audio_list, sr=self.hps.data.sampling_rate, speed=speed)
+        audio = converter.convert(
+            input_path,
+            src_se=default_se,
+            tgt_se=tgt_embedding,
+            output_path=output_path,
+            tau=0.3,
+            message=""
+        )
 
-        if output_path is None:
-            return audio
-        else:
-            soundfile.write(output_path, audio, self.hps.data.sampling_rate)
+        st.success("Conversion complete!")
+        st.audio(output_path)
 
-
-class ToneColorConverter(OpenVoiceBaseClass):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        if kwargs.get('enable_watermark', True):
-            import wavmark
-            self.watermark_model = wavmark.load_model().to(self.device)
-        else:
-            self.watermark_model = None
-        self.version = getattr(self.hps, '_version_', "v1")
-
-
-
-    def extract_se(self, ref_wav_list, se_save_path=None):
-        if isinstance(ref_wav_list, str):
-            ref_wav_list = [ref_wav_list]
-        
-        device = self.device
-        hps = self.hps
-        gs = []
-        
-        for fname in ref_wav_list:
-            audio_ref, sr = librosa.load(fname, sr=hps.data.sampling_rate)
-            y = torch.FloatTensor(audio_ref)
-            y = y.to(device)
-            y = y.unsqueeze(0)
-            y = spectrogram_torch(y, hps.data.filter_length,
-                                        hps.data.sampling_rate, hps.data.hop_length, hps.data.win_length,
-                                        center=False).to(device)
-            with torch.no_grad():
-                g = self.model.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
-                gs.append(g.detach())
-        gs = torch.stack(gs).mean(0)
-
-        if se_save_path is not None:
-            os.makedirs(os.path.dirname(se_save_path), exist_ok=True)
-            torch.save(gs.cpu(), se_save_path)
-
-        return gs
-
-    def convert(self, audio_src_path, src_se, tgt_se, output_path=None, tau=0.3, message="default"):
-        hps = self.hps
-        # load audio
-        audio, sample_rate = librosa.load(audio_src_path, sr=hps.data.sampling_rate)
-        audio = torch.tensor(audio).float()
-        
-        with torch.no_grad():
-            y = torch.FloatTensor(audio).to(self.device)
-            y = y.unsqueeze(0)
-            spec = spectrogram_torch(y, hps.data.filter_length,
-                                    hps.data.sampling_rate, hps.data.hop_length, hps.data.win_length,
-                                    center=False).to(self.device)
-            spec_lengths = torch.LongTensor([spec.size(-1)]).to(self.device)
-            audio = self.model.voice_conversion(spec, spec_lengths, sid_src=src_se, sid_tgt=tgt_se, tau=tau)[0][
-                        0, 0].data.cpu().float().numpy()
-            audio = self.add_watermark(audio, message)
-            if output_path is None:
-                return audio
-            else:
-                soundfile.write(output_path, audio, hps.data.sampling_rate)
-    
-    def add_watermark(self, audio, message):
-        if self.watermark_model is None:
-            return audio
-        device = self.device
-        bits = utils.string_to_bits(message).reshape(-1)
-        n_repeat = len(bits) // 32
-
-        K = 16000
-        coeff = 2
-        for n in range(n_repeat):
-            trunck = audio[(coeff * n) * K: (coeff * n + 1) * K]
-            if len(trunck) != K:
-                print('Audio too short, fail to add watermark')
-                break
-            message_npy = bits[n * 32: (n + 1) * 32]
-            
-            with torch.no_grad():
-                signal = torch.FloatTensor(trunck).to(device)[None]
-                message_tensor = torch.FloatTensor(message_npy).to(device)[None]
-                signal_wmd_tensor = self.watermark_model.encode(signal, message_tensor)
-                signal_wmd_npy = signal_wmd_tensor.detach().cpu().squeeze()
-            audio[(coeff * n) * K: (coeff * n + 1) * K] = signal_wmd_npy
-        return audio
-
-    def detect_watermark(self, audio, n_repeat):
-        bits = []
-        K = 16000
-        coeff = 2
-        for n in range(n_repeat):
-            trunck = audio[(coeff * n) * K: (coeff * n + 1) * K]
-            if len(trunck) != K:
-                print('Audio too short, fail to detect watermark')
-                return 'Fail'
-            with torch.no_grad():
-                signal = torch.FloatTensor(trunck).to(self.device).unsqueeze(0)
-                message_decoded_npy = (self.watermark_model.decode(signal) >= 0.5).int().detach().cpu().numpy().squeeze()
-            bits.append(message_decoded_npy)
-        bits = np.stack(bits).reshape(-1, 8)
-        message = utils.bits_to_string(bits)
-        return message
-    
+# Footer
+st.markdown("---")
+st.markdown("Created using [OpenVoice](https://github.com/myshell-ai/OpenVoice) | Powered by Streamlit")
