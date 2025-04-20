@@ -7,16 +7,15 @@ from openvoice import commons
 import os
 import librosa
 import json
-import requests  # <-- ADDED to handle URL-based config
+import requests
+import tempfile
 from openvoice.text import text_to_sequence
 from openvoice.mel_processing import spectrogram_torch
 from openvoice.models import SynthesizerTrn
 
 
 class OpenVoiceBaseClass(object):
-    def __init__(self, 
-                config_path, 
-                device='cuda:0'):
+    def __init__(self, config_path, device='cuda:0'):
         if 'cuda' in device:
             assert torch.cuda.is_available()
 
@@ -35,9 +34,8 @@ class OpenVoiceBaseClass(object):
             len(getattr(hps, 'symbols', [])),
             hps.data.filter_length // 2 + 1,
             n_speakers=hps.data.n_speakers,
-            **vars(hps.model),  # ✅ this converts the namespace to a dict
+            **vars(hps.model),
         ).to(device)
-
 
         model.eval()
         self.model = model
@@ -45,6 +43,14 @@ class OpenVoiceBaseClass(object):
         self.device = device
 
     def load_ckpt(self, ckpt_path):
+        # Download from URL if necessary
+        if ckpt_path.startswith("http"):
+            response = requests.get(ckpt_path)
+            response.raise_for_status()
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                tmp.write(response.content)
+                ckpt_path = tmp.name
+
         checkpoint_dict = torch.load(ckpt_path, map_location=torch.device(self.device))
         a, b = self.model.load_state_dict(checkpoint_dict['model'], strict=False)
         print("Loaded checkpoint '{}'".format(ckpt_path))
@@ -124,11 +130,11 @@ class ToneColorConverter(OpenVoiceBaseClass):
     def extract_se(self, ref_wav_list, se_save_path=None):
         if isinstance(ref_wav_list, str):
             ref_wav_list = [ref_wav_list]
-        
+
         device = self.device
         hps = self.hps
         gs = []
-        
+
         for fname in ref_wav_list:
             audio_ref, sr = librosa.load(fname, sr=hps.data.sampling_rate)
             y = torch.FloatTensor(audio_ref)
@@ -152,7 +158,7 @@ class ToneColorConverter(OpenVoiceBaseClass):
         hps = self.hps
         audio, sample_rate = librosa.load(audio_src_path, sr=hps.data.sampling_rate)
         audio = torch.tensor(audio).float()
-        
+
         with torch.no_grad():
             y = torch.FloatTensor(audio).to(self.device)
             y = y.unsqueeze(0)
@@ -183,7 +189,7 @@ class ToneColorConverter(OpenVoiceBaseClass):
                 print('Audio too short, fail to add watermark')
                 break
             message_npy = bits[n * 32: (n + 1) * 32]
-            
+
             with torch.no_grad():
                 signal = torch.FloatTensor(trunck).to(device)[None]
                 message_tensor = torch.FloatTensor(message_npy).to(device)[None]
