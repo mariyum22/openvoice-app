@@ -45,7 +45,9 @@ def load_models():
 tts_model, converter, default_se, style_se, imran_se = load_models()
 
 # Streamlit UI
-st.title("OpenVoice v1 - Voice-to-Voice Demo (CPU)")
+st.title("Imran Khan Voice Cloner")
+st.subheader("Upload your voice and hear it speak like Imran Khan.")
+
 
 uploaded_file = st.file_uploader("Upload your voice (WAV only)", type=[".wav"])
 
