@@ -1,5 +1,6 @@
 import streamlit as st
 import torch
+import torchaudio
 import soundfile as sf
 from openvoice.api import BaseSpeakerTTS, ToneColorConverter
 import os
@@ -129,7 +130,12 @@ if st.button("Convert") and uploaded_file:
             imran_se
         )
 
-        audio = converter.convert(temp_input_path, src_se=source_se, tgt_se=imran_se)
+        audio = converter.convert(
+        temp_input_path,
+        src_se=source_se,
+        tgt_se=imran_se,
+        speaker_mix_ratio=0.95  # Try values: 0.9, 0.95
+        )
 
 
         sf.write(temp_output_path, audio, samplerate=24000)
