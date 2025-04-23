@@ -134,8 +134,9 @@ if st.button("Convert") and uploaded_file:
         temp_input_path,
         src_se=source_se,
         tgt_se=target_se,
-        speaker_mix_ratio=0.95  # optional, improve voice match
+        speaker_mix_rate=0.95  # ✅ Corrected spelling
         )
+
 
 
 
