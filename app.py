@@ -31,13 +31,13 @@ CONVERTER_CKPT_URL = f"{CONVERTER_DIR}/checkpoint.pth"
 
 
 # Download checkpoints
-download_file("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/converter/config.json", "checkpoints/converter/config.json")
-download_file("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/converter/checkpoint.pth", "checkpoints/converter/checkpoint.pth")
-download_file("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/config.json", "checkpoints/base_speakers/EN/config.json")
-download_file("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/checkpoint.pth", "checkpoints/base_speakers/EN/checkpoint.pth")
-download_file("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/en_default_se.pth", "checkpoints/base_speakers/EN/en_default_se.pth")
-download_file("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/en_style_se.pth", "checkpoints/base_speakers/EN/en_style_se.pth")
-download_file("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth", "checkpoints/base_speakers/EN/imran_khan_se.pth")
+download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/converter/config.json", "checkpoints/converter/config.json")
+download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/converter/checkpoint.pth", "checkpoints/converter/checkpoint.pth")
+download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/config.json", "checkpoints/base_speakers/EN/config.json")
+download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/checkpoint.pth", "checkpoints/base_speakers/EN/checkpoint.pth")
+download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/en_default_se.pth", "checkpoints/base_speakers/EN/en_default_se.pth")
+download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/en_style_se.pth", "checkpoints/base_speakers/EN/en_style_se.pth")
+download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth", "checkpoints/base_speakers/EN/imran_khan_se.pth")
 
 def convert_mp3_to_wav(mp3_file):
     audio = AudioSegment.from_file(mp3_file, format="mp3")
@@ -85,11 +85,7 @@ def load_models():
         imran_se_url = "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth"
         download_if_missing(imran_se_url, imran_se_path)
         imran_se = torch.load(imran_se_path, map_location="cpu")
-
-        # 🔧 Fix for Imran Khan embedding
-        #imran_se = torch.hub.load_state_dict_from_url(
-        #"https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth",
-         #map_location="CPU") 
+ 
 
 
 
