@@ -62,18 +62,33 @@ def load_models():
 
 
        # Load speaker embeddings
-        default_se_dict = torch.hub.load_state_dict_from_url(
-        "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/en_default_se.pth",
-        map_location="CPU")
-        style_se_dict = torch.hub.load_state_dict_from_url(
-        "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/en_style_se.pth",
-        map_location="CPU")
-        #imran_se = torch.load("checkpoints/base_speakers/EN/imran_khan_se.pth", map_location="cpu")["vector"]
+        # File path and URL
+        default_se_path = "checkpoints/base_speakers/EN/en_default_se.pth"
+        default_se_url = "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/en_default_se.pth"
+
+        # Download if missing
+        download_if_missing(default_se_url, default_se_path)
+
+        # Now safe to load
+        default_se = torch.load(default_se_path, map_location="cpu")
+
+        style_se_path = "checkpoints/base_speakers/EN/en_style_se.pth"
+        style_se_url = "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/en_style_se.pth"
+
+        download_if_missing(style_se_url, style_se_path)
+
+        style_se = torch.load(style_se_path, map_location="cpu")
+        
+        # Download + Load imran_se
+        imran_se_path = "checkpoints/base_speakers/EN/imran_khan_se.pth"
+        imran_se_url = "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth"
+        download_if_missing(imran_se_url, imran_se_path)
+        imran_se = torch.load(imran_se_path, map_location="cpu")
 
         # 🔧 Fix for Imran Khan embedding
-        imran_se = torch.hub.load_state_dict_from_url(
-        "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth",
-         map_location="CPU") 
+        #imran_se = torch.hub.load_state_dict_from_url(
+        #"https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth",
+         #map_location="CPU") 
 
 
 
