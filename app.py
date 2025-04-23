@@ -62,12 +62,14 @@ def load_models():
 
 
        # Load speaker embeddings
-        default_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_default_se.pth", map_location="cpu")
-        style_se = torch.hub.load_state_dict_from_url(f"{EN_DIR}/en_style_se.pth", map_location="cpu")
+        default_se = torch.load("checkpoints/base_speakers/EN/en_default_se.pth", map_location="cpu")["vector"]
+        style_se = torch.load("checkpoints/base_speakers/EN/en_style_se.pth", map_location="cpu")["vector"]
+        imran_se = torch.load("checkpoints/base_speakers/EN/imran_khan_se.pth", map_location="cpu")["vector"]
+
         # 🔧 Fix for Imran Khan embedding
-        imran_se = torch.hub.load_state_dict_from_url(
-        "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth",
-        map_location="cpu"
+        #imran_se = torch.hub.load_state_dict_from_url(
+        #"https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth",
+        #map_location="cpu"
         )
 
 
