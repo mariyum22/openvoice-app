@@ -133,9 +133,10 @@ if st.button("Convert") and uploaded_file:
         audio = converter.convert(
         temp_input_path,
         src_se=source_se,
-        tgt_se=imran_se,
-        speaker_mix_ratio=0.95  # Try values: 0.9, 0.95
+        tgt_se=target_se,
+        speaker_mix_ratio=0.95  # optional, improve voice match
         )
+
 
 
         sf.write(temp_output_path, audio, samplerate=24000)
