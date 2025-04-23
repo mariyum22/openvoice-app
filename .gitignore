@@ -3,7 +3,7 @@ __pycache__/
 processed
 outputs
 outputs_v2
-checkpoints
+#checkpoints
 checkpoints_v2
 trash
 examples*
