@@ -97,13 +97,13 @@ def load_models():
 tts_model, converter, default_se, style_se, imran_se = load_models()
 
 # Streamlit UI
-st.title("Imran Khan Voice Cloner")
-st.subheader("Upload your voice and hear it speak like Imran Khan.")
+st.title("Voice Cloner")
+st.subheader("Upload your voice and hear it speak like Another Person")
 
 
 uploaded_file = st.file_uploader("Upload your voice", type=["wav", "mp3"])
 
-style_option = st.selectbox("Choose voice style", ["default", "style", "imran_khan"])
+style_option = st.selectbox("Choose voice style", ["default", "style", "my_brother"])
 
 if st.button("Convert") and uploaded_file:
     with st.spinner("Processing..."):
