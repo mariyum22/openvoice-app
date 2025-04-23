@@ -59,17 +59,26 @@ st.title("Imran Khan Voice Cloner")
 st.subheader("Upload your voice and hear it speak like Imran Khan.")
 
 
-uploaded_file = st.file_uploader("Upload your voice (WAV only)", type=[".wav"])
+uploaded_file = st.file_uploader("Upload your voice", type=["wav", "mp3"])
 
 style_option = st.selectbox("Choose voice style", ["default", "style", "imran_khan"])
 
 if st.button("Convert") and uploaded_file:
     with st.spinner("Processing..."):
-        temp_input_path = f"input_{uuid.uuid4().hex}.wav"
-        temp_output_path = f"output_{uuid.uuid4().hex}.wav"
+        # Handle MP3 → WAV conversion if needed
+        if uploaded_file.name.endswith(".mp3"):
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as mp3_temp:
+                mp3_temp.write(uploaded_file.read())
+                mp3_path = mp3_temp.name
+            audio = AudioSegment.from_file(mp3_path, format="mp3")
+            temp_input_path = f"input_{uuid.uuid4().hex}.wav"
+            audio.export(temp_input_path, format="wav")
+        else:
+            temp_input_path = f"input_{uuid.uuid4().hex}.wav"
+            with open(temp_input_path, "wb") as f:
+                f.write(uploaded_file.read())
 
-        with open(temp_input_path, "wb") as f:
-            f.write(uploaded_file.read())
+        temp_output_path = f"output_{uuid.uuid4().hex}.wav"
 
         # Pick source and target SE
         source_se = default_se if style_option == "default" else style_se
