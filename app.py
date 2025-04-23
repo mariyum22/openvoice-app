@@ -8,6 +8,10 @@ from pydub import AudioSegment
 import tempfile
 import requests
 
+os.makedirs("checkpoints/base_speakers/EN", exist_ok=True)
+os.makedirs("checkpoints/converter", exist_ok=True)
+
+
 def download_file(url, save_path):
     if not os.path.exists(save_path):
         print(f"⬇ Downloading {url} to {save_path}")
