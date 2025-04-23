@@ -4,6 +4,9 @@ import soundfile as sf
 from openvoice.api import BaseSpeakerTTS, ToneColorConverter
 import os
 import uuid
+from pydub import AudioSegment
+import tempfile
+
 
 # Hugging Face base path
 HF_BASE = "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main"
@@ -11,6 +14,13 @@ EN_DIR = f"{HF_BASE}/base_speakers/EN"
 CONVERTER_DIR = f"{HF_BASE}/converter"
 CONVERTER_CONFIG_URL = f"{CONVERTER_DIR}/config.json"
 CONVERTER_CKPT_URL = f"{CONVERTER_DIR}/checkpoint.pth"
+
+def convert_mp3_to_wav(mp3_file):
+    audio = AudioSegment.from_file(mp3_file, format="mp3")
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
+        audio.export(tmpfile.name, format="wav")
+        return tmpfile.name
+
 
 
 @st.cache_resource
