@@ -9,9 +9,8 @@ import tempfile
 
 
 # Hugging Face base path
-HF_BASE = "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main"
-EN_DIR = f"{HF_BASE}/base_speakers/EN"
-CONVERTER_DIR = f"{HF_BASE}/converter"
+EN_DIR = "checkpoints/base_speakers/EN"
+CONVERTER_DIR = "checkpoints/converter"
 CONVERTER_CONFIG_URL = f"{CONVERTER_DIR}/config.json"
 CONVERTER_CKPT_URL = f"{CONVERTER_DIR}/checkpoint.pth"
 
