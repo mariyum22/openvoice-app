@@ -70,7 +70,6 @@ def load_models():
         #imran_se = torch.hub.load_state_dict_from_url(
         #"https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth",
         #map_location="cpu"
-        )
 
 
 
