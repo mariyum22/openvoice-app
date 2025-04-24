@@ -106,7 +106,7 @@ def load_models():
 tts_model, converter, default_se, style_se, imran_se = load_models()
 
 # Streamlit UI
-st.title("Voice Cloner")
+st.title("AnyOne, AnyWhere Voice Cloner")
 st.subheader("Upload your voice and hear it speak like Another Person")
 
 
