@@ -39,7 +39,7 @@ download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resol
 download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/en_default_se.pth", "checkpoints/base_speakers/EN/en_default_se.pth")
 download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/en_style_se.pth", "checkpoints/base_speakers/EN/en_style_se.pth")
 download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth", "checkpoints/base_speakers/EN/imran_khan_se.pth")
-download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/new_imran.pth", "checkpoints/base_speakers/EN/new_imran.pth")
+#download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/new_imran.pth", "checkpoints/base_speakers/EN/new_imran.pth")
 def convert_mp3_to_wav(mp3_file):
     audio = AudioSegment.from_file(mp3_file, format="mp3")
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
@@ -88,11 +88,11 @@ def load_models():
         imran_se = torch.load(imran_se_path, map_location="cpu")
 
         #Download New Imran
-        new_imran_se_path = "checkpoints/base_speakers/EN/new_imran.pth"
-        new_imran_se_url = "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/new_imran.pth"
+        #new_imran_se_path = "checkpoints/base_speakers/EN/new_imran.pth"
+        #new_imran_se_url = "https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/new_imran.pth"
 
-        download_if_missing(new_imran_se_url, new_imran_se_path)
-        new_imran_se = torch.load(new_imran_se_path, map_location="cpu")
+        #download_if_missing(new_imran_se_url, new_imran_se_path)
+        #new_imran_se = torch.load(new_imran_se_path, map_location="cpu")
 
         
  
@@ -112,7 +112,7 @@ st.subheader("Upload your voice and hear it speak like Another Person")
 
 uploaded_file = st.file_uploader("Upload your voice", type=["wav", "mp3"])
 
-style_option = st.selectbox("Choose voice style", ["default", "style", "my_brother", "imran_khan"])
+style_option = st.selectbox("Choose voice style", ["default", "style", "my_brother"])
 
 if st.button("Convert") and uploaded_file:
     with st.spinner("Processing..."):
@@ -136,8 +136,7 @@ if st.button("Convert") and uploaded_file:
         target_se = (
             default_se if style_option == "default" else
             style_se if style_option == "style" else
-            imran_se if style_option == "imran_khan" else
-            new_imran_se
+            imran_se
         )
 
         audio = converter.convert(
