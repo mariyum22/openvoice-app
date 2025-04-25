@@ -16,7 +16,7 @@ os.makedirs("checkpoints/converter", exist_ok=True)
 def download_if_missing(url, save_path):
     if not os.path.exists(save_path):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        print(f"⬇ Downloading {url} to {save_path}")
+        print(f"⬇ Downloading {url} to {save_path}") 
         r = requests.get(url)
         r.raise_for_status()
         with open(save_path, "wb") as f:
