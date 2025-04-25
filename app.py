@@ -115,7 +115,7 @@ if st.button("Convert") and uploaded_file:
     temp_input_path = f"input_{uuid.uuid4().hex}.wav"
     with open(temp_input_path, "wb") as f:
         f.write(uploaded_file.read())
-        temp_output_path = f"output_{uuid.uuid4().hex}.wav"
+    temp_output_path = f"output_{uuid.uuid4().hex}.wav"
 
         # Pick source and target SE
         source_se = default_se if style_option == "default" else style_se
