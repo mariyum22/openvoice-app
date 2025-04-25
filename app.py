@@ -43,12 +43,16 @@ download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resol
 #download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/new_imran.pth", "checkpoints/base_speakers/EN/new_imran.pth")
 def convert_mp3_to_wav(mp3_file):
     from pydub import AudioSegment
-    AudioSegment.converter = which("ffmpeg")  # manually set ffmpeg path
+    AudioSegment.converter = which("ffmpeg")      # Tell pydub where ffmpeg is
+    AudioSegment.ffprobe = which("ffmpeg")        # Force ffmpeg for probing too
+    
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmpmp3:
         tmpmp3.write(mp3_file.read())
         tmpmp3.flush()
         tmpmp3_path = tmpmp3.name
+
     audio = AudioSegment.from_file(tmpmp3_path, format="mp3")
+
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpwav:
         audio.export(tmpwav.name, format="wav")
         return tmpwav.name
