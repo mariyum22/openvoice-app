@@ -8,7 +8,7 @@ import uuid
 from pydub import AudioSegment
 import tempfile
 import requests
-import subprocess
+from pydub.utils import which
 
 os.makedirs("checkpoints/base_speakers/EN", exist_ok=True)
 os.makedirs("checkpoints/converter", exist_ok=True)
@@ -42,17 +42,16 @@ download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resol
 download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth", "checkpoints/base_speakers/EN/imran_khan_se.pth")
 #download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/new_imran.pth", "checkpoints/base_speakers/EN/new_imran.pth")
 def convert_mp3_to_wav(mp3_file):
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
-        wav_path = tmpfile.name
+    from pydub import AudioSegment
+    AudioSegment.converter = which("ffmpeg")  # manually set ffmpeg path
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmpmp3:
         tmpmp3.write(mp3_file.read())
         tmpmp3.flush()
-        subprocess.call([
-            "/usr/bin/ffmpeg", "-y", "-i", tmpmp3.name,
-            "-ar", "24000",
-            wav_path
-        ])
-    return wav_path
+        tmpmp3_path = tmpmp3.name
+    audio = AudioSegment.from_file(tmpmp3_path, format="mp3")
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpwav:
+        audio.export(tmpwav.name, format="wav")
+        return tmpwav.name
 
 
 
