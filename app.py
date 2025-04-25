@@ -5,10 +5,8 @@ import soundfile as sf
 from openvoice.api import BaseSpeakerTTS, ToneColorConverter 
 import os
 import uuid
-from pydub import AudioSegment
 import tempfile
 import requests
-from pydub.utils import which
 
 os.makedirs("checkpoints/base_speakers/EN", exist_ok=True)
 os.makedirs("checkpoints/converter", exist_ok=True)
@@ -41,23 +39,6 @@ download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resol
 download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/en_style_se.pth", "checkpoints/base_speakers/EN/en_style_se.pth")
 download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth", "checkpoints/base_speakers/EN/imran_khan_se.pth")
 #download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/new_imran.pth", "checkpoints/base_speakers/EN/new_imran.pth")
-def convert_mp3_to_wav(mp3_file):
-    from pydub import AudioSegment
-    AudioSegment.converter = which("ffmpeg")      # Tell pydub where ffmpeg is
-    AudioSegment.ffprobe = which("ffmpeg")        # Force ffmpeg for probing too
-    
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmpmp3:
-        tmpmp3.write(mp3_file.read())
-        tmpmp3.flush()
-        tmpmp3_path = tmpmp3.name
-
-    audio = AudioSegment.from_file(tmpmp3_path, format="mp3")
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpwav:
-        audio.export(tmpwav.name, format="wav")
-        return tmpwav.name
-
-
 
 
 @st.cache_resource
@@ -122,25 +103,18 @@ st.title("AnyOne, AnyWhere Voice Cloner")
 st.subheader("Upload your voice and hear it speak like Another Person")
 
 
-uploaded_file = st.file_uploader("Upload your voice", type=["wav", "mp3"])
+uploaded_file = st.file_uploader("Upload your voice (.wav only)", type=["wav"])
+st.warning("Note: MP3 files are not supported on Streamlit Cloud. Please upload a `.wav` file.")
+
 
 style_option = st.selectbox("Choose voice style", ["default", "style", "my_brother"])
 
 if st.button("Convert") and uploaded_file:
     with st.spinner("Processing..."):
         # Handle MP3 → WAV conversion if needed
-        if uploaded_file.name.endswith(".mp3"):
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as mp3_temp:
-                mp3_temp.write(uploaded_file.read())
-                mp3_temp.flush()
-                temp_input_path = convert_mp3_to_wav(mp3_temp)
-
-
-        else:
-            temp_input_path = f"input_{uuid.uuid4().hex}.wav"
-            with open(temp_input_path, "wb") as f:
-                f.write(uploaded_file.read())
-
+    temp_input_path = f"input_{uuid.uuid4().hex}.wav"
+    with open(temp_input_path, "wb") as f:
+        f.write(uploaded_file.read())
         temp_output_path = f"output_{uuid.uuid4().hex}.wav"
 
         # Pick source and target SE
