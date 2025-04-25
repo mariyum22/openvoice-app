@@ -111,11 +111,11 @@ style_option = st.selectbox("Choose voice style", ["default", "style", "my_broth
 
 if st.button("Convert") and uploaded_file:
     with st.spinner("Processing..."):
-        # Handle MP3 → WAV conversion if needed
-    temp_input_path = f"input_{uuid.uuid4().hex}.wav"
-    with open(temp_input_path, "wb") as f:
-        f.write(uploaded_file.read())
-    temp_output_path = f"output_{uuid.uuid4().hex}.wav"
+        temp_input_path = f"input_{uuid.uuid4().hex}.wav"
+        with open(temp_input_path, "wb") as f:
+            f.write(uploaded_file.read())
+
+        temp_output_path = f"output_{uuid.uuid4().hex}.wav"
 
         # Pick source and target SE
         source_se = default_se if style_option == "default" else style_se
