@@ -8,6 +8,7 @@ import uuid
 from pydub import AudioSegment
 import tempfile
 import requests
+import subprocess
 
 os.makedirs("checkpoints/base_speakers/EN", exist_ok=True)
 os.makedirs("checkpoints/converter", exist_ok=True)
@@ -41,10 +42,17 @@ download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resol
 download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/imran_khan_se.pth", "checkpoints/base_speakers/EN/imran_khan_se.pth")
 #download_if_missing("https://huggingface.co/mariyumg/openvoice-checkpoints/resolve/main/base_speakers/EN/new_imran.pth", "checkpoints/base_speakers/EN/new_imran.pth")
 def convert_mp3_to_wav(mp3_file):
-    audio = AudioSegment.from_file(mp3_file, format="mp3")
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
-        audio.export(tmpfile.name, format="wav")
-        return tmpfile.name
+        wav_path = tmpfile.name
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmpmp3:
+        tmpmp3.write(mp3_file.read())
+        tmpmp3.flush()
+        subprocess.call([
+            "ffmpeg", "-y", "-i", tmpmp3.name,
+            "-ar", "24000",  # Set sample rate to 24000Hz
+            wav_path
+        ])
+    return wav_path
 
 
 
@@ -120,10 +128,10 @@ if st.button("Convert") and uploaded_file:
         if uploaded_file.name.endswith(".mp3"):
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as mp3_temp:
                 mp3_temp.write(uploaded_file.read())
-                mp3_path = mp3_temp.name
-            audio = AudioSegment.from_file(mp3_path, format="mp3")
-            temp_input_path = f"input_{uuid.uuid4().hex}.wav"
-            audio.export(temp_input_path, format="wav")
+                mp3_temp.flush()
+                temp_input_path = convert_mp3_to_wav(mp3_temp)
+
+
         else:
             temp_input_path = f"input_{uuid.uuid4().hex}.wav"
             with open(temp_input_path, "wb") as f:
