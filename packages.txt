@@ -1,2 +1,0 @@
-ffmpeg
-Delete packages.txt to fix startup errors
