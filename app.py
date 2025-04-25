@@ -48,11 +48,12 @@ def convert_mp3_to_wav(mp3_file):
         tmpmp3.write(mp3_file.read())
         tmpmp3.flush()
         subprocess.call([
-            "ffmpeg", "-y", "-i", tmpmp3.name,
-            "-ar", "24000",  # Set sample rate to 24000Hz
+            "/usr/bin/ffmpeg", "-y", "-i", tmpmp3.name,
+            "-ar", "24000",
             wav_path
         ])
     return wav_path
+
 
 
 
